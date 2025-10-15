@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Cars</title>
+<link rel="stylesheet" href="mycars.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo-container">
+    <i class="fa-solid fa-car logo-icon"></i>
+    <h1 class="logo">My Cars</h1>
+  </div>
+  <button class="logout-btn" onclick="logout()">
+    <i class="fa-solid fa-right-from-bracket"></i> Logout
+  </button>
+</nav>
+
+<main class="dashboard">
+  <div class="section-header">
+    <h2 class="section-title">Your Registered Cars</h2>
+    <button class="add-car-btn" onclick="openAddCarModal()">
+      <i class="fa-solid fa-plus"></i> Add New Car
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Vehicle ID</th>
+          <th>Customer ID</th>
+          <th>Registration Number</th>
+          <th>Model</th>
+          <th>Year</th>
+        </tr>
+      </thead>
+      <tbody id="car-list"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="addCarModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Add New Car</h3>
+      <span class="close" onclick="closeAddCarModal()">&times;</span>
+    </div>
+    <form id="addCarForm">
+      <div class="form-group">
+        <label for="carModel">Car Model:</label>
+        <input type="text" id="carModel" name="model" required>
+      </div>
+      <div class="form-group">
+        <label for="registrationNumber">Registration Number:</label>
+        <input type="text" id="registrationNumber" name="registration_number" required>
+      </div>
+      <div class="form-group">
+        <label for="carYear">Year:</label>
+        <input type="number" id="carYear" name="year" required min="1900" max="2025">
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeAddCarModal()">Cancel</button>
+        <button type="submit">Add Car</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2025 AutoSecure Corp. Customer Portal</p>
+</footer>
+
+<script>
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+
+function openAddCarModal() { document.getElementById('addCarModal').style.display = 'block'; }
+function closeAddCarModal() { 
+  document.getElementById('addCarModal').style.display = 'none';
+  document.getElementById('addCarForm').reset();
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById('addCarModal');
+  if (event.target === modal) closeAddCarModal();
+}
+
+// Load cars
+async function loadCars() {
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  if (!user) { window.location.href='login.html'; return; }
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/cars?customer_id=${user.user_id}`);
+    const cars = await res.json();
+    const carList = document.getElementById('car-list');
+
+    if (cars.length === 0) carList.innerHTML = '<tr><td colspan="5">No vehicles registered.</td></tr>';
+    else carList.innerHTML = cars.map(c => `
+      <tr>
+        <td>${c.vehicle_id}</td>
+        <td>${c.customer_id}</td>
+        <td>${c.reg_number}</td>
+        <td>${c.model}</td>
+        <td>${c.year}</td>
+      </tr>`).join('');
+  } catch (err) {
+    console.error('Error fetching cars:', err);
+  }
+}
+
+// Add new car
+async function addNewCar(carData) {
+  try {
+    const res = await fetch('http://localhost:5000/api/cars', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(carData)
+    });
+
+    const result = await res.json();
+    if(res.ok){
+      alert(result.message);
+      closeAddCarModal();
+      loadCars();
+    } else alert(result.message || 'Failed to add car');
+  } catch(err) { console.error(err); alert('Server error!'); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadCars();
+
+  document.getElementById('addCarForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    const formData = new FormData(e.target);
+    addNewCar({
+      customer_id: user.user_id,
+      model: formData.get('model'),
+      registration_number: formData.get('registration_number'),
+      year: parseInt(formData.get('year'))
+    });
+  });
+});
+</script>
+
+</body>
+</html>

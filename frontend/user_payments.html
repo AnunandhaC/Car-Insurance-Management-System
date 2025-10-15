@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payments</title>
+<link rel="stylesheet" href="user_payments.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo-container">
+    <i class="fa-solid fa-credit-card logo-icon"></i>
+    <h1 class="logo">My Payments</h1>
+  </div>
+</nav>
+
+<main class="dashboard">
+  <div class="section-header">
+    <h2 class="section-title">Your Payments</h2>
+   <!-- <button class="add-car-btn" onclick="openAddPaymentModal()">
+      <i class="fa-solid fa-plus"></i> Add Payment
+    </button>-->
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Payment ID</th>
+          <th>Policy ID</th>
+          <th>Customer ID</th>
+          <th>Payment Date</th>
+          <th>Amount</th>
+          <th>Method</th>
+        </tr>
+      </thead>
+      <tbody id="payment-list"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="addPaymentModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Add Payment</h3>
+      <span class="close" onclick="closeAddPaymentModal()">&times;</span>
+    </div>
+    <form id="addPaymentForm">
+      <div class="form-group">
+        <label for="policy_id">Policy ID:</label>
+        <input type="number" id="policy_id" name="policy_id" required>
+      </div>
+      <div class="form-group">
+        <label for="customer_id">Customer ID:</label>
+        <input type="number" id="customer_id" name="customer_id" required>
+      </div>
+      <div class="form-group">
+        <label for="payment_date">Payment Date:</label>
+        <input type="date" id="payment_date" name="payment_date" required>
+      </div>
+      <div class="form-group">
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" required>
+      </div>
+      <div class="form-group">
+        <label for="method">Method:</label>
+        <select id="method" name="method" required>
+          <option value="debit_card">Debit Card</option>
+          <option value="credit_card">Credit Card</option>
+          <option value="net_banking">Net Banking</option>
+          <option value="upi">UPI</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" onclick="closeAddPaymentModal()">Cancel</button>
+        <button type="submit" class="submit-btn">Add Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2025 AutoSecure Corp. Customer Portal</p>
+</footer>
+
+<script>
+function openAddPaymentModal() { document.getElementById('addPaymentModal').style.display='block'; }
+function closeAddPaymentModal() { 
+  document.getElementById('addPaymentModal').style.display='none';
+  document.getElementById('addPaymentForm').reset();
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById('addPaymentModal');
+  if (event.target === modal) closeAddPaymentModal();
+}
+
+async function loadPayments() {
+  try {
+    const res = await fetch('http://localhost:5000/api/payments');
+    const payments = await res.json();
+    const paymentList = document.getElementById('payment-list');
+
+    if (!payments.length) {
+      paymentList.innerHTML = '<tr><td colspan="6">No payments found.</td></tr>';
+      return;
+    }
+
+    paymentList.innerHTML = payments.map(p => `
+      <tr>
+        <td>${p.payment_id}</td>
+        <td>${p.policy_id}</td>
+        <td>${p.customer_id}</td>
+        <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+        <td>${parseFloat(p.amount).toFixed(2)}</td>
+        <td>${p.method}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+    document.getElementById('payment-list').innerHTML = '<tr><td colspan="6">Failed to load payments.</td></tr>';
+  }
+}
+
+async function addNewPayment(data) {
+  try {
+    const res = await fetch('http://localhost:5000/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (res.ok) {
+      alert(result.message);
+      closeAddPaymentModal();
+      loadPayments();
+    } else alert(result.message || 'Failed to add payment');
+  } catch (err) {
+    console.error(err);
+    alert('Server error!');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadPayments();
+
+  document.getElementById('addPaymentForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const data = {
+      policy_id: parseInt(document.getElementById('policy_id').value),
+      customer_id: parseInt(document.getElementById('customer_id').value),
+      payment_date: document.getElementById('payment_date').value,
+      amount: parseFloat(document.getElementById('amount').value),
+      method: document.getElementById('method').value
+    };
+    addNewPayment(data);
+  });
+});
+</script>
+</body>
+</html>

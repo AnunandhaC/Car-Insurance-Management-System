@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #4b79a1, #283e51);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+      width: 350px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #00c6ff;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0072ff;
+    }
+    #message {
+      margin-top: 10px;
+      color: yellow;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Customer Signup</h2>
+    <form id="signupForm">
+      <input type="text" id="name" placeholder="Full Name" required><br>
+      <input type="email" id="email" placeholder="Email" required><br>
+      <input type="password" id="password" placeholder="Password" required><br>
+      <input type="text" id="phone" placeholder="Phone"><br>
+      <input type="text" id="address" placeholder="Address"><br>
+      <button type="submit">Sign Up</button>
+    </form>
+    <p id="message"></p>
+  </div>
+
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = document.getElementById('message');
+      message.textContent = 'Processing...';
+
+      const data = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address').value.trim()
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/api/signup', {
+
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        console.log(result); // Debug in browser console
+
+        if (response.ok) {
+          message.style.color = 'lightgreen';
+          message.textContent = 'Signup successful! Redirecting...';
+          setTimeout(() => {
+            window.location.href = 'login.html'; // redirect after 1.5s
+          }, 1500);
+        } else {
+          message.style.color = 'red';
+          message.textContent = result.message || 'Signup failed. Try again.';
+        }
+      } catch (err) {
+        console.error(err);
+        message.style.color = 'red';
+        message.textContent = 'Server error. Check if backend is running.';
+      }
+    });
+  </script>
+</body>
+</html>

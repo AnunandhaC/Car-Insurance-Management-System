@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .toolbar { display:flex; gap:1rem; justify-content: space-between; align-items:center; margin: 1rem 0; }
+    .search { flex:1; }
+    .search input { width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color:#fff; }
+    .btn { background: linear-gradient(135deg, #6a11cb, #2575fc); color:#fff; border:none; padding:0.7rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    .table-container { overflow-x:auto; }
+    table { width:100%; border-collapse: collapse; background: rgba(255,255,255,0.05); border-radius:12px; overflow:hidden; }
+    thead { background: rgba(101,119,255,0.3); }
+    th, td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); color:#fff; text-align:left; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); }
+    .modal-content { background:#1f233a; border:1px solid rgba(255,255,255,0.1); border-radius:12px; width:90%; max-width:520px; margin:5% auto; padding:1.5rem; }
+    .form-group { margin-bottom:1rem; }
+    .form-group label { display:block; margin-bottom:0.4rem; color:#e6e9f0; }
+    .form-group input { width:100%; padding:0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:#fff; }
+    .form-actions { display:flex; justify-content:flex-end; gap:0.6rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-container">
+      <i class="fa-solid fa-car-side logo-icon"></i>
+      <h1 class="logo">Car Management</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </nav>
+
+  <main class="dashboard">
+    <div class="section-header">
+      <h2 class="section-title">Vehicles</h2>
+      <!--<button class="btn" onclick="openModal()"><i class="fa fa-plus"></i> Add Car</button>-->
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <input type="text" id="searchInput" placeholder="Search by model, reg number, or customer" />
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle ID</th>
+            <th>Customer ID</h3>
+            <th>Reg Number</th>
+            <th>Model</th>
+            <th>Year</th>
+          </tr>
+        </thead>
+        <tbody id="cars-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div class="modal" id="carModal">
+    <div class="modal-content">
+      <h3>Add Car</h3>
+      <form id="carForm">
+        <div class="form-group">
+          <label for="customer_id">Customer ID</label>
+          <input id="customer_id" type="number" required />
+        </div>
+        <div class="form-group">
+          <label for="reg_number">Registration Number</label>
+          <input id="reg_number" required />
+        </div>
+        <div class="form-group">
+          <label for="model">Model</label>
+          <input id="model" required />
+        </div>
+        <div class="form-group">
+          <label for="year">Year</label>
+          <input id="year" type="number" min="1900" max="2025" required />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2025 AutoSecure Corp. Admin Portal</p>
+  </footer>
+
+  <script>
+    let carsCache = [];
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    function openModal() { document.getElementById('carModal').style.display = 'block'; }
+    function closeModal() { document.getElementById('carModal').style.display = 'none'; document.getElementById('carForm').reset(); }
+
+    async function fetchCars() {
+      const tbody = document.getElementById('cars-body');
+      tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+      try {
+        const res = await fetch('http://localhost:5000/api/cars');
+        carsCache = await res.json();
+        renderCars(carsCache);
+      } catch (err) {
+        console.error('Failed to load cars', err);
+        tbody.innerHTML = '<tr><td colspan="5">Failed to load cars.</td></tr>';
+      }
+    }
+
+    function renderCars(list) {
+      const tbody = document.getElementById('cars-body');
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = (list || []).filter(v => {
+        const model = (v.model || '').toLowerCase();
+        const reg = (v.reg_number || v.registration_number || '').toLowerCase();
+        const cust = String(v.customer_id || '');
+        return !q || model.includes(q) || reg.includes(q) || cust.includes(q);
+      });
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No vehicles found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filtered.map(v => `
+        <tr>
+          <td>${v.vehicle_id}</td>
+          <td>${v.customer_id}</td>
+          <td>${v.reg_number || v.registration_number}</td>
+          <td>${v.model}</td>
+          <td>${v.year}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function saveCar(e) {
+      e.preventDefault();
+      const payload = {
+        customer_id: parseInt(document.getElementById('customer_id').value),
+        model: document.getElementById('model').value.trim(),
+        registration_number: document.getElementById('reg_number').value.trim(),
+        year: parseInt(document.getElementById('year').value)
+      };
+      try {
+        const res = await fetch('http://localhost:5000/api/cars', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const result = await res.json();
+        if (!res.ok) { alert(result.message || 'Failed to add car'); return; }
+        closeModal();
+        fetchCars();
+      } catch (err) {
+        console.error('Add car failed', err);
+        alert('Server error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('searchInput').value = '';
+      fetchCars();
+      document.getElementById('searchInput').addEventListener('input', () => renderCars(carsCache));
+      document.getElementById('carForm').addEventListener('submit', saveCar);
+      document.getElementById('carModal').addEventListener('click', (e) => { if (e.target.id === 'carModal') closeModal(); });
+    });
+  </script>
+</body>
+</html>
+
+

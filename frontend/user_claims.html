@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Claims - Car Insurance</title>
+  <link rel="stylesheet" href="user_claims.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header class="section-header">
+      <h2 class="section-title">My Claims</h2>
+      <button id="addClaimBtn" class="add-btn"><i class="fa-solid fa-plus"></i> Add Claim</button>
+    </header>
+
+    <!-- Claims Table -->
+    <div class="table-container">
+      <table id="claimsTable">
+        <thead>
+          <tr>
+            <th>Claim ID</th>
+            <th>Policy ID</th>
+            <th>Claim Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Add Claim Form (Hidden initially) -->
+    <div class="form-section" id="addClaimForm" style="display: none;">
+      <h3>Request New Claim</h3>
+      <form id="claimForm">
+        <input type="number" id="policy_id" placeholder="Policy ID" required />
+        <input type="date" id="claim_date" required />
+        <input type="number" step="0.01" id="amount" placeholder="Amount" required />
+        <textarea id="description" rows="3" placeholder="Description" required></textarea>
+        <button type="submit">Submit Claim</button>
+        <p id="msg"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:5000/api/claims";
+    const claimsTable = document.querySelector("#claimsTable tbody");
+    const msg = document.getElementById("msg");
+
+    // Fetch and show claims
+    async function loadClaims() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        claimsTable.innerHTML = "";
+
+        if (!data.length) {
+          claimsTable.innerHTML = "<tr><td colspan='6'>No claims found</td></tr>";
+          return;
+        }
+
+        data.forEach(c => {
+          const row = `
+            <tr>
+              <td>${c.claim_id}</td>
+              <td>${c.policy_id}</td>
+              <td>${c.claim_date ? c.claim_date.split('T')[0] : '-'}</td>
+              <td>${c.amount}</td>
+              <td>${c.status}</td>
+              <td>${c.description}</td>
+            </tr>`;
+          claimsTable.insertAdjacentHTML("beforeend", row);
+        });
+      } catch (err) {
+        console.error("Error loading claims:", err);
+      }
+    }
+
+    // Add new claim
+    document.getElementById("claimForm").addEventListener("submit", async e => {
+      e.preventDefault();
+
+      const newClaim = {
+        policy_id: document.getElementById("policy_id").value,
+        claim_date: document.getElementById("claim_date").value,
+        amount: document.getElementById("amount").value,
+        description: document.getElementById("description").value
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newClaim)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = "✅ Claim added successfully!";
+          msg.style.color = "limegreen";
+          document.getElementById("claimForm").reset();
+          loadClaims();
+        } else {
+          msg.textContent = data.message || "Error adding claim.";
+          msg.style.color = "red";
+        }
+      } catch (err) {
+        msg.textContent = "Server error.";
+        msg.style.color = "red";
+      }
+    });
+
+    // Toggle form
+    document.getElementById("addClaimBtn").addEventListener("click", () => {
+      const form = document.getElementById("addClaimForm");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    });
+
+    // Load on start
+    loadClaims();
+  </script>
+</body>
+</html>

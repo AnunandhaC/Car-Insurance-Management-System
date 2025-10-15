@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Insurance Login</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-header">
+        <i class="fa-solid fa-car-burst"></i>
+        <h2>Car Insurance Portal</h2>
+      </div>
+
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button onclick="login()">Login</button>
+
+      <p class="signup-text">
+        Don't have an account? 
+        <a href="signup.html">Sign Up</a>
+      </p>
+      <p id="msg"></p>
+    </div>
+  </div>
+  <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .toolbar { display:flex; gap:1rem; justify-content: space-between; align-items:center; margin: 1rem 0; }
+    .search { flex:1; }
+    .search input { width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color:#fff; }
+    .btn { background: linear-gradient(135deg, #6a11cb, #2575fc); color:#fff; border:none; padding:0.7rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    .table-container { overflow-x:auto; }
+    table { width:100%; border-collapse: collapse; background: rgba(255,255,255,0.05); border-radius:12px; overflow:hidden; }
+    thead { background: rgba(101,119,255,0.3); }
+    th, td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); color:#fff; text-align:left; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); }
+    .modal-content { background:#1f233a; border:1px solid rgba(255,255,255,0.1); border-radius:12px; width:90%; max-width:520px; margin:5% auto; padding:1.5rem; }
+    .form-group { margin-bottom:1rem; }
+    .form-group label { display:block; margin-bottom:0.4rem; color:#e6e9f0; }
+    .form-group input { width:100%; padding:0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.05); color:#fff; }
+    .form-actions { display:flex; justify-content:flex-end; gap:0.6rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-container">
+      <i class="fa-solid fa-user-tie logo-icon"></i>
+      <h1 class="logo">Agent Management</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </nav>
+
+  <main class="dashboard">
+    <div class="section-header">
+      <h2 class="section-title">Agents</h2>
+      <!--<button class="btn" onclick="openModal()"><i class="fa fa-plus"></i> Add Agent</button>-->
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <input type="text" id="searchInput" placeholder="Search by name or email" />
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Agent ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="agents-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div class="modal" id="agentModal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Add Agent</h3>
+      <form id="agentForm">
+        <input type="hidden" id="agent_id" />
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input id="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" required />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2025 AutoSecure Corp. Admin Portal</p>
+  </footer>
+
+  <script>
+    let agentsCache = [];
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    function openModal(agent) {
+      const modal = document.getElementById('agentModal');
+      const title = document.getElementById('modalTitle');
+      const form = document.getElementById('agentForm');
+      form.reset();
+      document.getElementById('agent_id').value = agent?.agent_id || agent?.id || '';
+      document.getElementById('name').value = agent?.name || '';
+      document.getElementById('email').value = agent?.email || '';
+      title.textContent = agent ? 'Edit Agent' : 'Add Agent';
+      modal.style.display = 'block';
+    }
+
+    function closeModal() { document.getElementById('agentModal').style.display = 'none'; }
+
+    async function fetchAgents() {
+      const tbody = document.getElementById('agents-body');
+      tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+      try {
+        const res = await fetch('http://localhost:5000/api/agents');
+        agentsCache = await res.json();
+        renderAgents(agentsCache);
+      } catch (err) {
+        console.error('Failed to load agents', err);
+        tbody.innerHTML = '<tr><td colspan="4">Failed to load agents.</td></tr>';
+      }
+    }
+
+    function renderAgents(list) {
+      const tbody = document.getElementById('agents-body');
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = (list || []).filter(a => {
+        const name = (a.name || '').toLowerCase();
+        const email = (a.email || '').toLowerCase();
+        return !q || name.includes(q) || email.includes(q);
+      });
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No agents found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filtered.map(a => `
+        <tr>
+          <td>${a.agent_id || a.id || ''}</td>
+          <td>${a.name || ''}</td>
+          <td>${a.email || ''}</td>
+          <td>
+            <button class="btn" onclick='openModal(${JSON.stringify({id: (a.agent_id||a.id), name: a.name, email: a.email}).replace(/"/g, "&quot;")})'>Edit</button>
+            <button class="btn" onclick="deleteAgent(${a.agent_id || a.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function saveAgent(e) {
+      e.preventDefault();
+      const id = document.getElementById('agent_id').value;
+      const payload = { name: document.getElementById('name').value.trim(), email: document.getElementById('email').value.trim() };
+      try {
+        let res;
+        if (id) {
+          res = await fetch(`http://localhost:5000/api/agents/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        } else {
+          res = await fetch('http://localhost:5000/api/agents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }
+        const result = await res.json();
+        if (!res.ok) { alert(result.message || 'Operation failed'); return; }
+        closeModal();
+        fetchAgents();
+      } catch (err) {
+        console.error('Save failed', err);
+        alert('Server error');
+      }
+    }
+
+    async function deleteAgent(id) {
+      if (!confirm('Delete this agent?')) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/agents/${id}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (!res.ok) { alert(result.message || 'Delete failed'); return; }
+        fetchAgents();
+      } catch (err) {
+        console.error('Delete failed', err);
+        alert('Server error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('searchInput').value = '';
+      fetchAgents();
+      document.getElementById('searchInput').addEventListener('input', () => renderAgents(agentsCache));
+      document.getElementById('agentForm').addEventListener('submit', saveAgent);
+      document.getElementById('agentModal').addEventListener('click', (e) => { if (e.target.id === 'agentModal') closeModal(); });
+    });
+  </script>
+</body>
+</html>
+
+

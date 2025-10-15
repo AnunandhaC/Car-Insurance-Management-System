@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-container">
+      <i class="fa-solid fa-shield-halved logo-icon"></i>
+      <h1 class="logo">Admin Dashboard</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </nav>
+
+  <main class="dashboard">
+    <h2 class="section-title">Manage System Modules</h2>
+
+    <div class="card-container">
+      <a class="card" href="admin_customers.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-user-gear card-icon"></i>
+        <h3>Customer Management</h3>
+      </a>
+      <a class="card" href="admin_cars.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-car-side card-icon"></i>
+        <h3>Car Management</h3>
+      </a>
+      <a class="card" href="admin_policies.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-file-contract card-icon"></i>
+        <h3>Policy Management</h3>
+      </a>
+      <a class="card" href="admin_claims.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-hand-holding-dollar card-icon"></i>
+        <h3>Claim Management</h3>
+      </a>
+      <a class="card" href="admin_payments.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-credit-card card-icon"></i>
+        <h3>Payment Tracking</h3>
+      </a>
+      <a class="card" href="admin_agents.html" style="text-decoration:none; color:inherit;">
+        <i class="fa-solid fa-user-tie card-icon"></i>
+        <h3>Agent Management</h3>
+      </a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 AutoSecure Corp. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

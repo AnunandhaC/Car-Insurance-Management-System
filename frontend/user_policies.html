@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Policies</title>
+<link rel="stylesheet" href="user_policies.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo-container">
+    <i class="fa-solid fa-shield-car logo-icon"></i>
+    <h1 class="logo">My Policies</h1>
+  </div>
+  <button class="logout-btn" onclick="logout()">
+    <i class="fa-solid fa-right-from-bracket"></i> Logout
+  </button>
+</nav>
+
+<main class="dashboard">
+  <div class="section-header">
+    <h2 class="section-title">Your Policies</h2>
+    <button class="add-policy-btn" onclick="openAddPolicyModal()">
+      <i class="fa-solid fa-plus"></i> Add New Policy
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Policy ID</th>
+          <th>Vehicle ID</th>
+          <th>Type</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Premium</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="policy-list"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Add Policy Modal -->
+<div id="addPolicyModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Add Upcoming Policy</h3>
+      <span class="close" onclick="closeAddPolicyModal()">&times;</span>
+    </div>
+    <form id="addPolicyForm">
+      <div class="form-group">
+        <label for="vehicle_id">Vehicle ID:</label>
+        <input type="number" id="vehicle_id" name="vehicle_id" required>
+      </div>
+      <div class="form-group">
+        <label for="policy_type">Policy Type:</label>
+        <input type="text" id="policy_type" name="policy_type" required>
+      </div>
+      <div class="form-group">
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+      </div>
+      <div class="form-group">
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+      </div>
+      <div class="form-group">
+        <label for="premium">Premium:</label>
+        <input type="number" id="premium" name="premium" required>
+      </div>
+      <div class="form-group">
+        <label for="status">Status:</label>
+        <input type="text" id="status" name="status" value="upcoming" readonly style="background:#eee; color:#555;">
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeAddPolicyModal()" class="cancel-btn">Cancel</button>
+        <button type="submit" class="submit-btn">Add Policy</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2025 AutoSecure Corp. Customer Portal</p>
+</footer>
+
+<script>
+function logout() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+function openAddPolicyModal() {
+  document.getElementById('addPolicyModal').style.display = 'block';
+}
+function closeAddPolicyModal() {
+  document.getElementById('addPolicyModal').style.display = 'none';
+  document.getElementById('addPolicyForm').reset();
+  document.getElementById('status').value = 'upcoming';
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById('addPolicyModal');
+  if (event.target === modal) closeAddPolicyModal();
+}
+
+// Load policies
+async function loadPolicies() {
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  if (!user) { window.location.href='login.html'; return; }
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/policies?vehicle_id=${user.vehicle_id || ''}`);
+    const policies = await res.json();
+    const policyList = document.getElementById('policy-list');
+
+    if (!policies || policies.length === 0) {
+      policyList.innerHTML = '<tr><td colspan="7">No policies found.</td></tr>';
+      return;
+    }
+
+    policyList.innerHTML = policies.map(p => {
+      const startDate = new Date(p.start_date).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+      const endDate = new Date(p.end_date).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+
+      return `
+        <tr>
+          <td>${p.policy_id}</td>
+          <td>${p.vehicle_id}</td>
+          <td>${p.policy_type}</td>
+          <td>${startDate}</td>
+          <td>${endDate}</td>
+          <td>${p.premium}</td>
+          <td>${p.status}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    document.getElementById('policy-list').innerHTML='<tr><td colspan="7">Failed to load policies.</td></tr>';
+  }
+}
+
+// Add new upcoming policy
+async function addNewPolicy(data) {
+  try {
+    const res = await fetch('http://localhost:5000/api/policies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if(res.ok) {
+      alert(result.message);
+      closeAddPolicyModal();
+      loadPolicies();
+    } else alert(result.message || 'Failed to add policy');
+  } catch(err) {
+    console.error(err);
+    alert('Server error!');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadPolicies();
+
+  document.getElementById('addPolicyForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const data = {
+      vehicle_id: parseInt(document.getElementById('vehicle_id').value),
+      policy_type: document.getElementById('policy_type').value,
+      start_date: document.getElementById('start_date').value,
+      end_date: document.getElementById('end_date').value,
+      premium: parseFloat(document.getElementById('premium').value),
+      status: 'upcoming'
+    };
+    addNewPolicy(data);
+  });
+});
+</script>
+
+</body>
+</html>

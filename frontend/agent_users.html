@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Customers</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .toolbar { display:flex; gap:1rem; justify-content: space-between; align-items:center; margin: 1rem 0; }
+    .search { flex:1; }
+    .search input { width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color:#fff; }
+    .table-container { overflow-x:auto; }
+    table { width:100%; border-collapse: collapse; background: rgba(255,255,255,0.05); border-radius:12px; overflow:hidden; }
+    thead { background: rgba(101,119,255,0.3); }
+    th, td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); color:#fff; text-align:left; }
+  </style>
+  </head>
+<body>
+  <nav class="navbar">
+    <div class="logo-container">
+      <i class="fa-solid fa-users logo-icon"></i>
+      <h1 class="logo">My Customers</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </nav>
+
+  <main class="dashboard">
+    <div class="section-header">
+      <h2 class="section-title">Customers</h2>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <input type="text" id="searchInput" placeholder="Search by name, email, or phone" />
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+        <tbody id="customers-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 AutoSecure Corp. Agent Portal</p>
+  </footer>
+
+  <script>
+    let customersCache = [];
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    async function fetchCustomers() {
+      const tbody = document.getElementById('customers-body');
+      tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+      try {
+        const res = await fetch('http://localhost:5000/api/customers');
+        customersCache = await res.json();
+        renderCustomers(customersCache);
+      } catch (err) {
+        console.error('Failed to load customers', err);
+        tbody.innerHTML = '<tr><td colspan="4">Failed to load customers.</td></tr>';
+      }
+    }
+
+    function renderCustomers(list) {
+      const tbody = document.getElementById('customers-body');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No customers found.</td></tr>';
+        return;
+      }
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = list.filter(c => {
+        const name = (c.name || '').toLowerCase();
+        const email = (c.email || '').toLowerCase();
+        const phone = (c.phone || '').toLowerCase();
+        return !q || name.includes(q) || email.includes(q) || phone.includes(q);
+      });
+      tbody.innerHTML = filtered.map(c => `
+        <tr>
+          <td>${c.customer_id || c.id || ''}</td>
+          <td>${c.name || ''}</td>
+          <td>${c.email || ''}</td>
+          <td>${c.phone || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchEl = document.getElementById('searchInput');
+      // Ensure search is empty on load
+      searchEl.value = '';
+      fetchCustomers();
+      searchEl.addEventListener('input', () => renderCustomers(customersCache));
+    });
+  </script>
+</body>
+</html>
+
+

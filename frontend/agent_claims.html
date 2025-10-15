@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claims</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .toolbar { display:flex; gap:1rem; justify-content: space-between; align-items:center; margin: 1rem 0; }
+    .search { flex:1; }
+    .search input { width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color:#fff; }
+    .table-container { overflow-x:auto; }
+    table { width:100%; border-collapse: collapse; background: rgba(255,255,255,0.05); border-radius:12px; overflow:hidden; }
+    thead { background: rgba(101,119,255,0.3); }
+    th, td { padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); color:#fff; text-align:left; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-container">
+      <i class="fa-solid fa-hand-holding-dollar logo-icon"></i>
+      <h1 class="logo">Claims</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </nav>
+
+  <main class="dashboard">
+    <div class="section-header">
+      <h2 class="section-title">All Claims</h2>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <input type="text" id="searchInput" placeholder="Search by policy, status, or description" />
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Claim ID</th>
+            <th>Policy ID</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody id="claims-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 AutoSecure Corp. Agent Portal</p>
+  </footer>
+
+  <script>
+    let claimsCache = [];
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    async function fetchClaims() {
+      const tbody = document.getElementById('claims-body');
+      tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+      try {
+        const res = await fetch('http://localhost:5000/api/claims');
+        claimsCache = await res.json();
+        renderClaims(claimsCache);
+      } catch (err) {
+        console.error('Failed to load claims', err);
+        tbody.innerHTML = '<tr><td colspan="6">Failed to load claims.</td></tr>';
+      }
+    }
+
+    function renderClaims(list) {
+      const tbody = document.getElementById('claims-body');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6">No claims found.</td></tr>';
+        return;
+      }
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = list.filter(c => {
+        const policyId = String(c.policy_id || '');
+        const status = (c.status || '').toLowerCase();
+        const desc = (c.description || '').toLowerCase();
+        return !q || policyId.includes(q) || status.includes(q) || desc.includes(q);
+      });
+      tbody.innerHTML = filtered.map(c => `
+        <tr>
+          <td>${c.claim_id}</td>
+          <td>${c.policy_id}</td>
+          <td>${new Date(c.claim_date).toLocaleDateString()}</td>
+          <td>${parseFloat(c.amount).toFixed(2)}</td>
+          <td>${c.status}</td>
+          <td>${c.description}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchEl = document.getElementById('searchInput');
+      searchEl.value = '';
+      fetchClaims();
+      searchEl.addEventListener('input', () => renderClaims(claimsCache));
+    });
+  </script>
+</body>
+</html>
+
+
