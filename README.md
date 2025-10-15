@@ -1,6 +1,6 @@
-# 🚗 Car Insurance Management Web App
+# 🚗 Car Insurance Management Website
 
-This is a full-stack web application for managing car insurance, including customers, agents, policies, claims, and payments. It has separate admin and user interfaces.
+This is a full-stack website for managing car insurance, including customers, agents, policies, claims, and payments. It has separate admin and user interfaces.
 
 ---
 
