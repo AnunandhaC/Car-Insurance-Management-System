@@ -6,27 +6,36 @@ This is a full-stack website for managing car insurance, including customers, ag
 
 ## **Features**
 
-### Admin
+### 🧑‍💼 Admin
 - Manage agents (add, edit, delete)
 - View and manage customers
 - Manage policies and claims
-- Track payments
+- Approve or reject claims
+- Track all payments
 
-### Customer / User
+### 👩‍💻 Agent
+- Login to view assigned customers
+- Manage customer policy details
+- File and update claims for customers
+- Track customer payment status
+- Communicate updates to customers
+
+### 🚙 Customer / User
 - Signup & login
-- View policies
-- File claims
-- Track payments
-- View assigned agent
+- View and manage personal policies
+- File insurance claims
+- Track payment and claim status
+- View assigned agent details
+
 
 ---
 
 ## **Technologies Used**
 
 - **Frontend:** HTML, CSS, JavaScript
-- **Backend:** Node.js, Express.js
+- **Backend:** Node.js
 - **Database:** MySQL
-- **Others:** CORS, body-parser
+
 
 ---
 
